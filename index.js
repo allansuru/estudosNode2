@@ -1,7 +1,16 @@
 const Joi = require('joi');
 const express = require('express');
 const app = express();
+
 app.use(express.json());
+// app.use(express.urlencoded({extended: true}));
+// app.use(express.static('public'));
+
+const logger = require('./logger')
+const authenticating = require('./authenticate')
+//Middleware Function
+app.use(logger);
+app.use(authenticating);
 
 const filmes = [
 { 
@@ -48,9 +57,13 @@ app.get('/api/tipo/:tipo', (req, res) => {
         res.send(this.filtraFilmes); 
     } else {
         console.log('Nao existe');
-        res.send('Nao existe este tipo de filme'); 
+        res.send('Nao existe este tipo de fil'); 
     }
 
+  });
+
+  app.post('/api/course', (req, res) => {
+        res.send(req.body);
   });
 
   app.post('/api/tipo', (req, res) => {
