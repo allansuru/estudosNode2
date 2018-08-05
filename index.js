@@ -1,16 +1,24 @@
 const Joi = require('joi');
 const express = require('express');
 const app = express();
+const helmet = require('helmet')
+const morgan = require('morgan');
 
 app.use(express.json());
 // app.use(express.urlencoded({extended: true}));
 // app.use(express.static('public'));
+// app.use(helmet())
+
+/* add um midlware no request que gera um log, 
+ lembrar sempre que add midlware impacta na performace*/
+app.use(morgan('dev')); 
 
 const logger = require('./logger')
 const authenticating = require('./authenticate')
 //Middleware Function
 app.use(logger);
 app.use(authenticating);
+
 
 const filmes = [
 { 
