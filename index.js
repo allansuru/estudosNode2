@@ -1,8 +1,22 @@
+const startupDebugger = require('debug')('app:startup');
+const dbDebugger = require('debug')('app:db');
+const config = require('config');
 const Joi = require('joi');
+const courses = require('./routes/courses');
+const home = require('./routes/home');
 const express = require('express');
 const app = express();
 const helmet = require('helmet')
 const morgan = require('morgan');
+
+
+const logger = require('./middleware/logger')
+const authenticating = require('./middleware/authenticate')
+//Middleware Function
+
+app.engine('pug', require('pug').__express)
+app.set('view engine', 'pug');
+ app.set('views', './views'); // default
 
 app.use(express.json());
 // app.use(express.urlencoded({extended: true}));
@@ -11,104 +25,31 @@ app.use(express.json());
 
 /* add um midlware no request que gera um log, 
  lembrar sempre que add midlware impacta na performace*/
-app.use(morgan('dev')); 
 
-const logger = require('./logger')
-const authenticating = require('./authenticate')
-//Middleware Function
+ console.log(`NODE ENV: ${process.env.NODE_ENV }`);
+ // or
+ // console.log(app.get('env'));
+
+ // Configuration
+
+ console.log(`Application name: ${config.get('name')}`);
+ console.log(`Mail Server: ${config.get('mail.host')}`);
+ console.log(`Mail Password: ${config.get('mail.password')}`);
+
+if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev')); 
+    startupDebugger('DEV')
+}
+
+// DB OK
+dbDebugger('Db connected OK!');
+
+
+
 app.use(logger);
 app.use(authenticating);
-
-
-const filmes = [
-{ 
-    id: 1, 
-    tipo:'Action',
-    filmes: [
-        { id: 1, nome: '007' },
-        { id: 2, nome: 'Titanic'},
-    ]
- },
- {
-    id: 2, 
-    tipo:'Terror',
-    filmes: [
-        { id: 1, nome: 'Bruxa de Blair' },
-        { id: 2, nome: 'Jason'},
-    ]
- },
- {
-    id: 3, 
-    tipo:'Romance',
-    filmes: [
-        { id: 1, nome: 'Viver Feliz' },
-        { id: 2, nome: 'Sonho Lindo'},
-    ]
- }
-];
-
-const filtraFilmes = {};
-
-app.get('/api/tipo', (req, res)=> {
-    res.send(filmes);
-});
-
-app.get('/api/tipo/:tipo', (req, res) => {
-    //res.send(req.params); 
-   filmes.filter(f => {
-        if (f.tipo === req.params.tipo) {
-            this.filtraFilmes = f;
-        }
-    });
-    console.log('Filtrado fora: ', this.filtraFilmes);
-    if (this.filtraFilmes !== undefined) {
-        res.send(this.filtraFilmes); 
-    } else {
-        console.log('Nao existe');
-        res.send('Nao existe este tipo de fil'); 
-    }
-
-  });
-
-  app.post('/api/course', (req, res) => {
-        res.send(req.body);
-  });
-
-  app.post('/api/tipo', (req, res) => {
-    const { error } = validandoFilme(req.body);
-    if(error)  return res.status(400).send(error.details[0].message);
-
-            const existe = filmes.find(f => f.tipo === req.body.tipo);
-
-            if (existe) {
-                console.log('Existe');
-                res.send(req.body)
-            } else {
-                console.log(' N Existe');
-                filme = {
-                    id: filmes.length + 1,
-                    tipo: req.body.tipo,
-                    filmes: [{
-                        id: req.body.filmes[0].id,
-                        nome: req.body.filmes[0].nome
-                    }
-                ]
-                };
-                filmes.push(filme);
-                res.send(filme)
-            }
-  });
-
-
-
-
-
-function validandoFilme(req) {
-    const scheme = {
-        tipo: Joi.string().min(3).max(30).required()
-    }
-    return Joi.validate(req.body, scheme)
-}
+app.use('/api/courses' ,courses);
+app.use('/', home);
 
 
 //PORT
